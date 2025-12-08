@@ -1,6 +1,6 @@
-// Mahika Bagri 
-// CSE 121
-// February 4 2025 
+//Mahika Bagri 
+//CSE 121
+//February 4 2025 
 
 //Simulates an election with known stats
 import java.util.*;
