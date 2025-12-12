@@ -1,91 +1,108 @@
-//Mahika Bagri 
-//March 15 2025 
+//Mahika Bagri
+//December 11 2025
 
 import java.util.*;
 
-//punnett square creator
-public class PunnettSquare {
-    public static void main(String args[]){
-        Scanner console = new Scanner(System.in);
-        String[] parentalInfo = parentalInfo(console);
-        String P1Gene = parentalInfo[0];
-        String P2Gene = parentalInfo[1];
-        int[] geneStartIndex = geneIndexing(P1Gene, P2Gene);
-        String[][] punnettSquareOfGenes = seperatingGenes(P1Gene, P2Gene, geneStartIndex);
-        for(int i =0; i < punnettSquareOfGenes.length; i++){
-            System.out.println(Arrays.deepToString(punnettSquareOfGenes[i]));
+public class punnettSquare{
+    private String P1Genome;
+    private String P2Genome;
+    private List<String> punnettSquareOfGenes;
+    private Map<Character, List<Character>> P1GenomeSplit;
+    private Map<Character, List<Character>> P2GenomeSplit;
+
+    public punnettSquare(String P1Gene, String P2Gene){
+
+        this.P1Genome = P1Gene;
+        this.P2Genome = P2Gene;
+        this.P1GenomeSplit = new HashMap<>();
+        this.P2GenomeSplit = new HashMap<>();
+
+        for(int i = 0; i < P1Genome.length(); i++){
+            char currentAllele = P1Genome.toLowerCase().charAt(i);
+
+            if(!this.P1GenomeSplit.containsKey(currentAllele)){
+                this.P1GenomeSplit.put(currentAllele, new ArrayList<Character>());
+                this.P2GenomeSplit.put(currentAllele, new ArrayList<Character>());
+            }
+            
+            this.P1GenomeSplit.get(currentAllele).add(P1Genome.charAt(i));
+            this.P2GenomeSplit.get(currentAllele).add(P2Genome.charAt(i));
         }
     }
 
-    public static String[] parentalInfo(Scanner console){
-        //assume 2 parents 
-        String[] parentalInfo = new String[2];
-        System.out.print("Parent 1 Genotype: ");
-        String P1Gene = console.next();
-        System.out.print("Parent 2 Genotype: ");
-        String P2Gene = console.next();
-        while(P1Gene.length() != P2Gene.length()){
-            System.out.println();
-            System.out.println("Error: Parental genes cannot have different lengths.");
-            System.out.println("Try again please.");
-            System.out.println();
-            System.out.print("Parent 1 Genotype: ");
-            P1Gene = console.next();
-            System.out.print("Parent 2 Genotype: ");
-            P2Gene = console.next();
+    public Map<String, Double> getGenotypeFrequencies(){
+        Map<String, Double> genotypeFrequencies = new HashMap<>();
+
+        double percent = 1.0; 
+        for(char allele: P1GenomeSplit.keySet()){
+            percent = percent*Math.pow(this.P1GenomeSplit.get(allele).size(), 2);
         }
-        parentalInfo[0] = P1Gene;
-        parentalInfo[1] = P2Gene;
-        return parentalInfo;
+        percent = 1/percent; 
+
+        getGenotypeFrequencies(genotypeFrequencies, "", percent);
+        return genotypeFrequencies;
     }
-    
-    public static int[] geneIndexing(String P1Gene, String P2Gene){
-        //assume binary alleles and no superscripts
-        String geneStartIndexString = "-";
-        for(int i = 1; i < P1Gene.length(); i++){
-            if(!P1Gene.substring(i, i+1).toLowerCase().equals(P1Gene.substring(i-1, i).toLowerCase())){
-                geneStartIndexString += "-";
-            }
-        }
-        int[] geneStartIndex = new int[geneStartIndexString.length()];
-        geneStartIndex[0] = 0;
-        int x = 1;
-        for(int i = 1; i < P1Gene.length(); i++){
-            if(!P1Gene.substring(i, i+1).toLowerCase().equals(P1Gene.substring(i-1, i).toLowerCase())){
-                geneStartIndex[x] = i;
-                x++;
-            }
-        }
-        int[] geneStartIndex2 = new int[geneStartIndexString.length()];
-        geneStartIndex2[0] = 0;
-        x = 1;
-        for(int i = 1; i < P2Gene.length(); i++){
-            if(!P2Gene.substring(i, i+1).toUpperCase().equals(P2Gene.substring(i-1, i).toUpperCase())){
-                geneStartIndex2[x] = i;
-                x++;
-            }
-        }
-        for(int i = 0; i < geneStartIndex.length; i++){
-            if(geneStartIndex2[i] != geneStartIndex[i]){
-                System.out.println();
-                System.out.println("Error: Parental gene indices do not match.");
-                System.out.println("Try again please.");
-                geneStartIndex = new int[0];
+
+    private void getGenotypeFrequencies(Map<String, Double> genotypeFrequencies, String genotype, 
+    double percent){
+        if(genotype.length() == P1Genome.length()){
+            if(!genotypeFrequencies.containsKey(genotype)){
+                genotypeFrequencies.put(genotype, 0.0);
             } 
+
+            genotypeFrequencies.put(genotype,
+            (genotypeFrequencies.get(genotype) + percent));
+            
         }
-        return geneStartIndex;
+        List<Character> alleleKeys = new ArrayList<>(P1GenomeSplit.keySet());
+
+        for(char allele: alleleKeys){
+
+            List<Character> P1GenotypeList = this.P1GenomeSplit.get(allele);
+            List<Character> P2GenotypeList = this.P2GenomeSplit.get(allele);
+            P1GenomeSplit.remove(allele);
+            P2GenomeSplit.remove(allele);
+
+            int alleleSize = P1GenotypeList.size();
+
+            for(int i = 0; i < alleleSize; i++){
+                char allele1 = P1GenotypeList.get(i);
+                genotype += allele1;
+
+                for(int j = 0; j < alleleSize; j++){
+                    char allele2 = P2GenotypeList.get(j);
+                    genotype += allele2;
+
+                    getGenotypeFrequencies(genotypeFrequencies, genotype, percent);
+                    genotype = genotype.substring(0, genotype.length()-1);
+                }
+                genotype = genotype.substring(0, genotype.length()-1);
+            }
+            P1GenomeSplit.put(allele, P1GenotypeList);
+            P2GenomeSplit.put(allele, P2GenotypeList);
+        }
     }
 
-    public static String[][] seperatingGenes(String P1Gene, String P2Gene, int[] geneStartIndex){
-        String[][] squareGenes = new String[geneStartIndex.length + 1][geneStartIndex.length + 1];
-        for(int i = 1; i < geneStartIndex.length; i++){
-            squareGenes[0][i] = P1Gene.substring(geneStartIndex[i-1], geneStartIndex[i]);
+    public Map<String, Double> getGenotypePerLocusFrequencies(){
+        Map<String, Double> genotypePerLocusFrequencies = new HashMap<>();
+ 
+        for(char allele:this.P1GenomeSplit.keySet()){
+            int geneSize = this.P1GenomeSplit.get(allele).size();
+            
+            for(int i = 0; i < geneSize; i++){
+                for(int j = 0; j < geneSize; j++){
+                    String genotype = "" + this.P1GenomeSplit.get(allele).get(i) +
+                    this.P2GenomeSplit.get(allele).get(j);
+
+                    if(!genotypePerLocusFrequencies.containsKey(genotype)){
+                        genotypePerLocusFrequencies.put(genotype, 0.0);
+                    }
+                    genotypePerLocusFrequencies.put(genotype,
+                    (genotypePerLocusFrequencies.get(genotype) + (1.0/(geneSize*geneSize))));
+                }
+            }
         }
-        squareGenes[0][geneStartIndex.length] = P1Gene.substring(geneStartIndex[geneStartIndex.length - 1]);
-        for(int i = 1; i < geneStartIndex.length; i++){
-            squareGenes[i][0] = P2Gene.substring(geneStartIndex[i-1], geneStartIndex[i]);
-        }
-        squareGenes[geneStartIndex.length][0] = P2Gene.substring(geneStartIndex[geneStartIndex.length - 1]);
-        return squareGenes;
+        return genotypePerLocusFrequencies;
     }
+
 }
