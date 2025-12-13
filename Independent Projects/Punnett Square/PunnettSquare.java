@@ -1,5 +1,5 @@
-//Mahika Bagri
-//December 11 2025
+//Mahika Bagri 
+//December 12 2025 
 
 import java.util.*;
 
@@ -31,7 +31,7 @@ public class punnettSquare{
     }
 
     public Map<String, Double> getGenotypeFrequencies(){
-        Map<String, Double> genotypeFrequencies = new HashMap<>();
+        Map<String, Double> genotypeFrequencies = new HashMap<>(); // Solution container 
 
         double percent = 1.0; 
         for(char allele: P1GenomeSplit.keySet()){
@@ -51,18 +51,17 @@ public class punnettSquare{
             } 
 
             genotypeFrequencies.put(genotype,
-            (genotypeFrequencies.get(genotype) + percent));
-            
+            (genotypeFrequencies.get(genotype) + percent));   
         }
-        List<Character> alleleKeys = new ArrayList<>(P1GenomeSplit.keySet());
 
-        for(char allele: alleleKeys){
+        if(!P1GenomeSplit.isEmpty()){
+            char allele = P1GenomeSplit.keySet().iterator().next();
 
             List<Character> P1GenotypeList = this.P1GenomeSplit.get(allele);
             List<Character> P2GenotypeList = this.P2GenomeSplit.get(allele);
             P1GenomeSplit.remove(allele);
             P2GenomeSplit.remove(allele);
-
+        
             int alleleSize = P1GenotypeList.size();
 
             for(int i = 0; i < alleleSize; i++){
