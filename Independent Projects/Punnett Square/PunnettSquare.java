@@ -1,5 +1,5 @@
 //Mahika Bagri 
-//December 12 2025 
+//18 January 2026 
 
 import java.util.*;
 
@@ -31,77 +31,90 @@ public class punnettSquare{
     }
 
     public Map<String, Double> getGenotypeFrequencies(){
-        Map<String, Double> genotypeFrequencies = new HashMap<>(); // Solution container 
+        //solution container
+        Map<String, Double> genotypeFrequencies = new HashMap<>(); 
+        Map<Character, Map<String, Double>>  genotypePerLocusFrequencies = getGenotypePerLocusFrequencies();
 
-        double percent = 1.0; 
-        for(char allele: P1GenomeSplit.keySet()){
-            percent = percent*Math.pow(this.P1GenomeSplit.get(allele).size(), 2);
-        }
-        percent = 1/percent; 
-
-        getGenotypeFrequencies(genotypeFrequencies, "", percent);
+        getGenotypeFrequencies(genotypeFrequencies, "", 1, genotypePerLocusFrequencies);
         return genotypeFrequencies;
     }
 
-    private void getGenotypeFrequencies(Map<String, Double> genotypeFrequencies, String genotype, 
-    double percent){
+    private void getGenotypeFrequencies(Map<String, Double> genotypeFrequencies, String genotype,
+    double percent, Map<Character, Map<String, Double>>  genotypePerLocusFrequencies){
+        //base condition
         if(genotype.length() == P1Genome.length()){
+            //normalize check
             if(!genotypeFrequencies.containsKey(genotype)){
                 genotypeFrequencies.put(genotype, 0.0);
             } 
-
             genotypeFrequencies.put(genotype,
-            (genotypeFrequencies.get(genotype) + percent));   
+            (genotypeFrequencies.get(genotype) + percent)); 
+            genotype = "";
+            percent = 1;  
         }
 
-        if(!P1GenomeSplit.isEmpty()){
-            char allele = P1GenomeSplit.keySet().iterator().next();
+        if(!genotypePerLocusFrequencies.isEmpty()){
+            char allele = genotypePerLocusFrequencies.keySet().iterator().next();
 
-            List<Character> P1GenotypeList = this.P1GenomeSplit.get(allele);
-            List<Character> P2GenotypeList = this.P2GenomeSplit.get(allele);
-            P1GenomeSplit.remove(allele);
-            P2GenomeSplit.remove(allele);
-        
-            int alleleSize = P1GenotypeList.size();
-
-            for(int i = 0; i < alleleSize; i++){
-                char allele1 = P1GenotypeList.get(i);
-                genotype += allele1;
-
-                for(int j = 0; j < alleleSize; j++){
-                    char allele2 = P2GenotypeList.get(j);
-                    genotype += allele2;
-
-                    getGenotypeFrequencies(genotypeFrequencies, genotype, percent);
-                    genotype = genotype.substring(0, genotype.length()-1);
-                }
-                genotype = genotype.substring(0, genotype.length()-1);
+            Map<String, Double> alleleMap = genotypePerLocusFrequencies.get(allele);
+            genotypePerLocusFrequencies.remove(allele);
+            for(String genotypePerLocus : alleleMap.keySet()){
+                getGenotypeFrequencies(genotypeFrequencies, genotype + genotypePerLocus,
+                percent*alleleMap.get(genotypePerLocus), genotypePerLocusFrequencies);
             }
-            P1GenomeSplit.put(allele, P1GenotypeList);
-            P2GenomeSplit.put(allele, P2GenotypeList);
+            genotypePerLocusFrequencies.put(allele, alleleMap);
         }
     }
 
-    public Map<String, Double> getGenotypePerLocusFrequencies(){
-        Map<String, Double> genotypePerLocusFrequencies = new HashMap<>();
- 
+    public Map<Character, Map<String, Double>> getGenotypePerLocusFrequencies(){
+        Map<Character, Map<String, Double>> genotypePerLocusFrequencies = new HashMap<>();
+        
         for(char allele:this.P1GenomeSplit.keySet()){
-            int geneSize = this.P1GenomeSplit.get(allele).size();
-            
-            for(int i = 0; i < geneSize; i++){
-                for(int j = 0; j < geneSize; j++){
-                    String genotype = "" + this.P1GenomeSplit.get(allele).get(i) +
-                    this.P2GenomeSplit.get(allele).get(j);
+            int geneLength = this.P1GenomeSplit.get(allele).size();
 
-                    if(!genotypePerLocusFrequencies.containsKey(genotype)){
-                        genotypePerLocusFrequencies.put(genotype, 0.0);
-                    }
-                    genotypePerLocusFrequencies.put(genotype,
-                    (genotypePerLocusFrequencies.get(genotype) + (1.0/(geneSize*geneSize))));
-                }
-            }
+            getGenotypePerLocusFrequencies(genotypePerLocusFrequencies, "", allele, geneLength);
         }
         return genotypePerLocusFrequencies;
     }
 
+    private void getGenotypePerLocusFrequencies(Map<Character, Map<String, Double>> genotypePerLocusFrequencies, 
+    String genotype, char allele, int geneLength){
+        //base condition
+        if(genotype.length() == geneLength){
+            genotype = normalizeGene(genotype, allele);
+            
+            if(!genotypePerLocusFrequencies.containsKey(allele)){
+                genotypePerLocusFrequencies.put(allele, new HashMap<>());
+            }
+            Map<String, Double> alleleMap = genotypePerLocusFrequencies.get(allele);
+
+            if(!alleleMap.containsKey(genotype)){
+                    alleleMap.put(genotype, 0.0);
+            }
+            alleleMap.put(genotype,
+            (alleleMap.get(genotype) + (1.0/(Math.pow(geneLength, 2*(geneLength/2))))));
+
+            return;
+        }
+        List<Character> P1GenotypeList = this.P1GenomeSplit.get(allele);
+        List<Character> P2GenotypeList = this.P2GenomeSplit.get(allele);
+
+        for(char P1GenotypeAllele : P1GenotypeList){                
+            for(char P2GenotypeAllele : P2GenotypeList){
+
+                getGenotypePerLocusFrequencies(genotypePerLocusFrequencies, 
+                genotype + P1GenotypeAllele + P2GenotypeAllele, allele, geneLength);
+            } 
+        }
+    }
+
+    private String normalizeGene(String genotype, char recessiveAllele){
+        for(int i = 0; i < genotype.length(); i++){
+            if(genotype.charAt(i) == recessiveAllele){
+                genotype = recessiveAllele + 
+                genotype.substring(0, i) + genotype.substring(i+1, genotype.length());
+            }
+        }
+        return genotype; 
+    }
 }
